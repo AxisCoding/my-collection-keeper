@@ -52,6 +52,10 @@ export default {
 					DEFAULT: 'hsl(var(--card))',
 					foreground: 'hsl(var(--card-foreground))'
 				},
+				books: 'hsl(var(--books))',
+				movies: 'hsl(var(--movies))',
+				manga: 'hsl(var(--manga))',
+				tv: 'hsl(var(--tv))',
 				sidebar: {
 					DEFAULT: 'hsl(var(--sidebar-background))',
 					foreground: 'hsl(var(--sidebar-foreground))',

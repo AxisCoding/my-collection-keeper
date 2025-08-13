@@ -8,7 +8,10 @@
     "appId": "com.mycollectionkeeper.app",
     "mac": {
       "category": "public.app-category.productivity",
-	      "target": ["dmg", "zip"]
+      "target": [
+        "dmg",
+        "zip"
+      ]
     }
   },
   "scripts": {

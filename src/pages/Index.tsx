@@ -3,6 +3,7 @@ import { useCollectionStore } from '@/hooks/useCollectionStore';
 import { CollectionItem, CollectionCategory } from '@/types/collection';
 import { CollectionItemCard } from '@/components/CollectionItemCard';
 import { AddItemDialog } from '@/components/AddItemDialog';
+import { EditItemDialog } from '@/components/EditItemDialog';
 import { CollectionStats } from '@/components/CollectionStats';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -13,9 +14,17 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { Badge } from '@/components/ui/badge';
-import { Search, Filter, BookOpen, Library } from 'lucide-react';
+import { Search, Filter, BookOpen, Library, Download, FileSpreadsheet, FileJson } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { exportToExcel, exportToJSON } from '@/utils/exportUtils';
+import { useToast } from '@/hooks/use-toast';
 
 const Index = () => {
   const {
@@ -30,6 +39,9 @@ const Index = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<CollectionCategory | 'all'>('all');
   const [selectedStatus, setSelectedStatus] = useState<CollectionItem['status'] | 'all'>('all');
+  const [editingItem, setEditingItem] = useState<CollectionItem | null>(null);
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const { toast } = useToast();
 
   const filteredItems = useMemo(() => {
     let filtered = items;
@@ -65,6 +77,27 @@ const Index = () => {
     setSearchQuery('');
     setSelectedCategory('all');
     setSelectedStatus('all');
+  };
+
+  const handleEditItem = (item: CollectionItem) => {
+    setEditingItem(item);
+    setEditDialogOpen(true);
+  };
+
+  const handleExportExcel = () => {
+    exportToExcel(items);
+    toast({
+      title: "Export Complete",
+      description: "Your collection has been exported to an Excel file.",
+    });
+  };
+
+  const handleExportJSON = () => {
+    exportToJSON(items);
+    toast({
+      title: "Backup Complete", 
+      description: "Your collection has been backed up to a JSON file.",
+    });
   };
 
   const hasActiveFilters = searchQuery || selectedCategory !== 'all' || selectedStatus !== 'all';
@@ -152,6 +185,24 @@ const Index = () => {
                 Clear Filters
               </Button>
             )}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" disabled={items.length === 0}>
+                  <Download className="w-4 h-4 mr-2" />
+                  Export
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem onClick={handleExportExcel}>
+                  <FileSpreadsheet className="w-4 h-4 mr-2" />
+                  Export to Excel
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={handleExportJSON}>
+                  <FileJson className="w-4 h-4 mr-2" />
+                  Backup as JSON
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
             <AddItemDialog onAddItem={addItem} />
           </div>
         </div>
@@ -203,10 +254,7 @@ const Index = () => {
               <CollectionItemCard
                 key={item.id}
                 item={item}
-                onEdit={(item) => {
-                  // TODO: Implement edit dialog
-                  console.log('Edit:', item);
-                }}
+                onEdit={handleEditItem}
                 onDelete={(item) => {
                   if (confirm('Are you sure you want to delete this item?')) {
                     deleteItem(item.id);
@@ -244,6 +292,13 @@ const Index = () => {
             )}
           </div>
         )}
+
+        <EditItemDialog
+          item={editingItem}
+          open={editDialogOpen}
+          onOpenChange={setEditDialogOpen}
+          onUpdateItem={updateItem}
+        />
       </div>
     </div>
   );

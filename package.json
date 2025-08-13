@@ -3,11 +3,20 @@
   "private": true,
   "version": "0.0.0",
   "type": "module",
+  "main": "electron.cjs",
+  "build": {
+    "appId": "com.mycollectionkeeper.app",
+    "mac": {
+      "category": "public.app-category.productivity",
+	      "target": ["dmg", "zip"]
+    }
+  },
   "scripts": {
     "dev": "vite",
     "build": "vite build",
     "build:dev": "vite build --mode development",
     "lint": "eslint .",
+    "electron": "npm run dev & electron .",
     "preview": "vite preview"
   },
   "dependencies": {

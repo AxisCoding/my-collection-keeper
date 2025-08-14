@@ -22,7 +22,7 @@ import { StarRating } from './StarRating';
 import { Plus } from 'lucide-react';
 
 interface AddItemDialogProps {
-  onAddItem: (item: Omit<CollectionItem, 'id' | 'createdAt' | 'updatedAt'>) => void;
+  onAddItem: (item: Omit<CollectionItem, 'id' | 'user_id' | 'created_at' | 'updated_at'>) => void;
 }
 
 const categoryOptions = [
@@ -44,14 +44,12 @@ export function AddItemDialog({ onAddItem }: AddItemDialogProps) {
   const [formData, setFormData] = useState({
     title: '',
     category: '' as CollectionCategory,
-    author: '',
-    director: '',
-    studio: '',
+    author_or_director: '',
     year: '',
     summary: '',
     rating: 0,
     status: 'planned' as CollectionItem['status'],
-    notes: '',
+    personal_notes: '',
   });
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -61,17 +59,15 @@ export function AddItemDialog({ onAddItem }: AddItemDialogProps) {
       return;
     }
 
-    const newItem: Omit<CollectionItem, 'id' | 'createdAt' | 'updatedAt'> = {
+    const newItem: Omit<CollectionItem, 'id' | 'user_id' | 'created_at' | 'updated_at'> = {
       title: formData.title,
       category: formData.category,
       rating: formData.rating,
       status: formData.status,
-      ...(formData.author && { author: formData.author }),
-      ...(formData.director && { director: formData.director }),
-      ...(formData.studio && { studio: formData.studio }),
+      ...(formData.author_or_director && { author_or_director: formData.author_or_director }),
       ...(formData.year && { year: parseInt(formData.year) }),
       ...(formData.summary && { summary: formData.summary }),
-      ...(formData.notes && { notes: formData.notes }),
+      ...(formData.personal_notes && { personal_notes: formData.personal_notes }),
     };
 
     onAddItem(newItem);
@@ -80,14 +76,12 @@ export function AddItemDialog({ onAddItem }: AddItemDialogProps) {
     setFormData({
       title: '',
       category: '' as CollectionCategory,
-      author: '',
-      director: '',
-      studio: '',
+      author_or_director: '',
       year: '',
       summary: '',
       rating: 0,
       status: 'planned',
-      notes: '',
+      personal_notes: '',
     });
     
     setOpen(false);
@@ -108,32 +102,12 @@ export function AddItemDialog({ onAddItem }: AddItemDialogProps) {
   };
 
   const getCreatorField = () => {
-    switch (formData.category) {
-      case 'books':
-        return (
-          <Input
-            value={formData.author}
-            onChange={(e) => setFormData({ ...formData, author: e.target.value })}
-          />
-        );
-      case 'movies':
-      case 'tv':
-        return (
-          <Input
-            value={formData.director}
-            onChange={(e) => setFormData({ ...formData, director: e.target.value })}
-          />
-        );
-      case 'manga':
-        return (
-          <Input
-            value={formData.studio}
-            onChange={(e) => setFormData({ ...formData, studio: e.target.value })}
-          />
-        );
-      default:
-        return null;
-    }
+    return (
+      <Input
+        value={formData.author_or_director}
+        onChange={(e) => setFormData({ ...formData, author_or_director: e.target.value })}
+      />
+    );
   };
 
   return (
@@ -237,11 +211,11 @@ export function AddItemDialog({ onAddItem }: AddItemDialogProps) {
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="notes">Personal Notes</Label>
+            <Label htmlFor="personal_notes">Personal Notes</Label>
             <Textarea
-              id="notes"
-              value={formData.notes}
-              onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+              id="personal_notes"
+              value={formData.personal_notes}
+              onChange={(e) => setFormData({ ...formData, personal_notes: e.target.value })}
               placeholder="Your thoughts, recommendations, etc..."
               rows={2}
             />

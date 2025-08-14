@@ -1,5 +1,7 @@
-import { useState, useMemo } from 'react';
-import { useCollectionStore } from '@/hooks/useCollectionStore';
+import { useState, useMemo, useRef, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useSupabaseCollectionStore } from '@/hooks/useSupabaseCollectionStore';
+import { useAuth } from '@/hooks/useAuth';
 import { CollectionItem, CollectionCategory } from '@/types/collection';
 import { CollectionItemCard } from '@/components/CollectionItemCard';
 import { AddItemDialog } from '@/components/AddItemDialog';
@@ -21,12 +23,14 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Badge } from '@/components/ui/badge';
-import { Search, Filter, BookOpen, Library, Download, FileSpreadsheet, FileJson } from 'lucide-react';
+import { Search, Filter, BookOpen, Library, Download, FileSpreadsheet, FileJson, Upload, LogOut } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { exportToExcel, exportToJSON } from '@/utils/exportUtils';
+import { exportToSupabaseStorage, parseImportFile } from '@/utils/supabaseExportUtils';
 import { useToast } from '@/hooks/use-toast';
 
 const Index = () => {
+  const navigate = useNavigate();
+  const { user, loading: authLoading, signOut } = useAuth();
   const {
     items,
     loading,
@@ -34,14 +38,24 @@ const Index = () => {
     updateItem,
     deleteItem,
     getStats,
-  } = useCollectionStore();
+    loadItems,
+  } = useSupabaseCollectionStore();
 
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<CollectionCategory | 'all'>('all');
   const [selectedStatus, setSelectedStatus] = useState<CollectionItem['status'] | 'all'>('all');
   const [editingItem, setEditingItem] = useState<CollectionItem | null>(null);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [importing, setImporting] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
+
+  // Redirect to auth if not authenticated
+  useEffect(() => {
+    if (!authLoading && !user) {
+      navigate('/auth');
+    }
+  }, [user, authLoading, navigate]);
 
   const filteredItems = useMemo(() => {
     let filtered = items;
@@ -51,9 +65,7 @@ const Index = () => {
       const query = searchQuery.toLowerCase();
       filtered = filtered.filter(item =>
         item.title.toLowerCase().includes(query) ||
-        item.author?.toLowerCase().includes(query) ||
-        item.director?.toLowerCase().includes(query) ||
-        item.studio?.toLowerCase().includes(query) ||
+        item.author_or_director?.toLowerCase().includes(query) ||
         item.summary?.toLowerCase().includes(query)
       );
     }
@@ -84,25 +96,100 @@ const Index = () => {
     setEditDialogOpen(true);
   };
 
-  const handleExportExcel = () => {
-    exportToExcel(items);
-    toast({
-      title: "Export Complete",
-      description: "Your collection has been exported to an Excel file.",
-    });
+  const handleExportExcel = async () => {
+    try {
+      await exportToSupabaseStorage(items, 'csv');
+      toast({
+        title: "Export Complete",
+        description: "Your collection has been exported to Excel and stored in your account.",
+      });
+    } catch (error) {
+      toast({
+        title: "Export Error",
+        description: "Failed to export your collection.",
+        variant: "destructive",
+      });
+    }
   };
 
-  const handleExportJSON = () => {
-    exportToJSON(items);
-    toast({
-      title: "Backup Complete", 
-      description: "Your collection has been backed up to a JSON file.",
-    });
+  const handleExportJSON = async () => {
+    try {
+      await exportToSupabaseStorage(items, 'json');
+      toast({
+        title: "Backup Complete", 
+        description: "Your collection has been backed up to JSON and stored in your account.",
+      });
+    } catch (error) {
+      toast({
+        title: "Backup Error",
+        description: "Failed to backup your collection.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleImport = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleFileImport = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    setImporting(true);
+    try {
+      const importedData = await parseImportFile(file);
+      
+      let successCount = 0;
+      let errorCount = 0;
+
+      for (const itemData of importedData) {
+        if (itemData.title && itemData.category && itemData.rating && itemData.status) {
+          const result = await addItem({
+            title: itemData.title,
+            category: itemData.category,
+            author_or_director: itemData.author_or_director,
+            year: itemData.year,
+            rating: Math.max(1, Math.min(10, itemData.rating)),
+            status: itemData.status,
+            summary: itemData.summary,
+            personal_notes: itemData.personal_notes,
+          });
+          
+          if (result) {
+            successCount++;
+          } else {
+            errorCount++;
+          }
+        } else {
+          errorCount++;
+        }
+      }
+
+      toast({
+        title: "Import Complete",
+        description: `Successfully imported ${successCount} items${errorCount > 0 ? `. ${errorCount} items failed to import.` : '.'}`,
+      });
+
+      // Refresh the collection
+      await loadItems();
+    } catch (error) {
+      toast({
+        title: "Import Error",
+        description: "Failed to import file. Please check the format and try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setImporting(false);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+    }
   };
 
   const hasActiveFilters = searchQuery || selectedCategory !== 'all' || selectedStatus !== 'all';
 
-  if (loading) {
+  if (authLoading || loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
@@ -113,16 +200,27 @@ const Index = () => {
     );
   }
 
+  if (!user) {
+    return null; // Will redirect to auth
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/30">
       <div className="container mx-auto px-4 py-8 space-y-8">
         {/* Header */}
         <div className="text-center space-y-4">
-          <div className="flex items-center justify-center gap-3 mb-2">
-            <BookOpen className="w-8 h-8 text-primary" />
-            <h1 className="text-4xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
-              My Collection
-            </h1>
+          <div className="flex items-center justify-between mb-4">
+            <div></div>
+            <div className="flex items-center justify-center gap-3">
+              <BookOpen className="w-8 h-8 text-primary" />
+              <h1 className="text-4xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
+                My Collection
+              </h1>
+            </div>
+            <Button variant="outline" onClick={signOut} className="flex items-center gap-2">
+              <LogOut className="h-4 w-4" />
+              Sign Out
+            </Button>
           </div>
           <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
             Organize and track your personal collection of books, movies, manga, and TV series
@@ -185,6 +283,7 @@ const Index = () => {
                 Clear Filters
               </Button>
             )}
+            
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="outline" disabled={items.length === 0}>
@@ -203,6 +302,25 @@ const Index = () => {
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
+
+            <Button
+              variant="outline"
+              onClick={handleImport}
+              disabled={importing}
+              className="flex items-center gap-2"
+            >
+              <Upload className="h-4 w-4" />
+              {importing ? 'Importing...' : 'Import'}
+            </Button>
+            
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept=".csv,.json"
+              onChange={handleFileImport}
+              className="hidden"
+            />
+
             <AddItemDialog onAddItem={addItem} />
           </div>
         </div>

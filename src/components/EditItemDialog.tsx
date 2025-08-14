@@ -44,14 +44,12 @@ export function EditItemDialog({ item, open, onOpenChange, onUpdateItem }: EditI
   const [formData, setFormData] = useState({
     title: '',
     category: '' as CollectionCategory,
-    author: '',
-    director: '',
-    studio: '',
+    author_or_director: '',
     year: '',
     summary: '',
     rating: 0,
     status: 'planned' as CollectionItem['status'],
-    notes: '',
+    personal_notes: '',
   });
 
   useEffect(() => {
@@ -59,14 +57,12 @@ export function EditItemDialog({ item, open, onOpenChange, onUpdateItem }: EditI
       setFormData({
         title: item.title,
         category: item.category,
-        author: item.author || '',
-        director: item.director || '',
-        studio: item.studio || '',
+        author_or_director: item.author_or_director || '',
         year: item.year?.toString() || '',
         summary: item.summary || '',
         rating: item.rating,
         status: item.status,
-        notes: item.notes || '',
+        personal_notes: item.personal_notes || '',
       });
     }
   }, [item]);
@@ -83,18 +79,11 @@ export function EditItemDialog({ item, open, onOpenChange, onUpdateItem }: EditI
       category: formData.category,
       rating: formData.rating,
       status: formData.status,
-      ...(formData.author && { author: formData.author }),
-      ...(formData.director && { director: formData.director }),
-      ...(formData.studio && { studio: formData.studio }),
-      ...(formData.year && { year: parseInt(formData.year) }),
-      ...(formData.summary && { summary: formData.summary }),
-      ...(formData.notes && { notes: formData.notes }),
+      summary: formData.summary || undefined,
+      year: formData.year ? parseInt(formData.year) : undefined,
+      personal_notes: formData.personal_notes || undefined,
+      author_or_director: formData.author_or_director || undefined,
     };
-
-    // Clear fields that shouldn't be set for this category
-    if (formData.category !== 'books') updates.author = undefined;
-    if (formData.category !== 'movies' && formData.category !== 'tv') updates.director = undefined;
-    if (formData.category !== 'manga') updates.studio = undefined;
 
     onUpdateItem(item.id, updates);
     onOpenChange(false);
@@ -111,35 +100,6 @@ export function EditItemDialog({ item, open, onOpenChange, onUpdateItem }: EditI
         return 'Studio/Author';
       default:
         return 'Creator';
-    }
-  };
-
-  const getCreatorField = () => {
-    switch (formData.category) {
-      case 'books':
-        return (
-          <Input
-            value={formData.author}
-            onChange={(e) => setFormData({ ...formData, author: e.target.value })}
-          />
-        );
-      case 'movies':
-      case 'tv':
-        return (
-          <Input
-            value={formData.director}
-            onChange={(e) => setFormData({ ...formData, director: e.target.value })}
-          />
-        );
-      case 'manga':
-        return (
-          <Input
-            value={formData.studio}
-            onChange={(e) => setFormData({ ...formData, studio: e.target.value })}
-          />
-        );
-      default:
-        return null;
     }
   };
 
@@ -186,7 +146,10 @@ export function EditItemDialog({ item, open, onOpenChange, onUpdateItem }: EditI
           {formData.category && (
             <div className="space-y-2">
               <Label htmlFor="creator">{getCreatorLabel()}</Label>
-              {getCreatorField()}
+              <Input
+                value={formData.author_or_director}
+                onChange={(e) => setFormData({ ...formData, author_or_director: e.target.value })}
+              />
             </div>
           )}
 
@@ -240,11 +203,11 @@ export function EditItemDialog({ item, open, onOpenChange, onUpdateItem }: EditI
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="notes">Personal Notes</Label>
+            <Label htmlFor="personal_notes">Personal Notes</Label>
             <Textarea
-              id="notes"
-              value={formData.notes}
-              onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+              id="personal_notes"
+              value={formData.personal_notes}
+              onChange={(e) => setFormData({ ...formData, personal_notes: e.target.value })}
               placeholder="Your thoughts, recommendations, etc..."
               rows={2}
             />

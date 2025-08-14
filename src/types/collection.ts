@@ -2,19 +2,17 @@ export type CollectionCategory = 'books' | 'movies' | 'manga' | 'tv';
 
 export interface CollectionItem {
   id: string;
+  user_id: string;
   title: string;
   category: CollectionCategory;
-  author?: string; // For books
-  director?: string; // For movies/TV
-  studio?: string; // For manga/anime
+  author_or_director?: string;
   year?: number;
   summary?: string;
-  rating: number; // 1-5 stars
+  rating: number; // 1-10 stars with half increments
   status: 'completed' | 'in-progress' | 'planned' | 'dropped';
-  notes?: string;
-  imageUrl?: string;
-  createdAt: Date;
-  updatedAt: Date;
+  personal_notes?: string;
+  created_at: string;
+  updated_at: string;
 }
 
 export interface CollectionStats {

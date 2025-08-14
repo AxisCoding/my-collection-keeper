@@ -16,10 +16,7 @@ interface CollectionItemCardProps {
 
 export function CollectionItemCard({ item, onEdit, onDelete, onView }: CollectionItemCardProps) {
   const getCreatorName = () => {
-    if (item.author) return item.author;
-    if (item.director) return item.director;
-    if (item.studio) return item.studio;
-    return null;
+    return item.author_or_director || null;
   };
 
   const getStatusBadge = () => {

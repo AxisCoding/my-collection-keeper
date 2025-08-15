@@ -2,6 +2,8 @@
   "name": "vite_react_shadcn_ts",
   "private": true,
   "version": "0.0.0",
+  "description": "My Collection Keeper app",
+  "author": "Renaud A.", 
   "type": "module",
   "main": "electron.cjs",
   "build": {
@@ -92,6 +94,7 @@
     "tailwindcss": "^3.4.17",
     "typescript": "^5.8.3",
     "typescript-eslint": "^8.38.0",
-    "vite": "^5.4.19"
+    "vite": "^5.4.19",
+    "electron": "^26.2.0" 
   }
 }

@@ -46,6 +46,7 @@ export function AddItemDialog({ onAddItem }: AddItemDialogProps) {
     category: '' as CollectionCategory,
     author_or_director: '',
     year: '',
+    genre: '',
     summary: '',
     rating: 0,
     status: 'planned' as CollectionItem['status'],
@@ -55,17 +56,21 @@ export function AddItemDialog({ onAddItem }: AddItemDialogProps) {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!formData.title || !formData.category || formData.rating === 0) {
+    // Rating is required for completed and dropped status, optional for in-progress and planned
+    const isRatingRequired = formData.status === 'completed' || formData.status === 'dropped';
+    
+    if (!formData.title || !formData.category || (isRatingRequired && formData.rating === 0)) {
       return;
     }
 
     const newItem: Omit<CollectionItem, 'id' | 'user_id' | 'created_at' | 'updated_at'> = {
       title: formData.title,
       category: formData.category,
-      rating: formData.rating,
       status: formData.status,
+      ...(formData.rating > 0 && { rating: formData.rating }),
       ...(formData.author_or_director && { author_or_director: formData.author_or_director }),
       ...(formData.year && { year: parseInt(formData.year) }),
+      ...(formData.genre && { genre: formData.genre }),
       ...(formData.summary && { summary: formData.summary }),
       ...(formData.personal_notes && { personal_notes: formData.personal_notes }),
     };
@@ -78,6 +83,7 @@ export function AddItemDialog({ onAddItem }: AddItemDialogProps) {
       category: '' as CollectionCategory,
       author_or_director: '',
       year: '',
+      genre: '',
       summary: '',
       rating: 0,
       status: 'planned',
@@ -173,7 +179,17 @@ export function AddItemDialog({ onAddItem }: AddItemDialogProps) {
           </div>
 
           <div className="space-y-2">
-            <Label>Rating *</Label>
+            <Label htmlFor="genre">Genre</Label>
+            <Input
+              id="genre"
+              value={formData.genre}
+              onChange={(e) => setFormData({ ...formData, genre: e.target.value })}
+              placeholder="e.g., Sci-Fi, Romance, Action"
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label>Rating {(formData.status === 'completed' || formData.status === 'dropped') ? '*' : ''}</Label>
             <StarRating
               rating={formData.rating}
               onRatingChange={(rating) => setFormData({ ...formData, rating })}

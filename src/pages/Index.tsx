@@ -25,7 +25,9 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { Search, Filter, BookOpen, Library, Download, FileSpreadsheet, FileJson, Upload, LogOut } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { exportToSupabaseStorage, parseImportFile } from '@/utils/supabaseExportUtils';
+import { exportToXLSX, exportToCSV, parseImportFile } from '@/utils/enhancedExportUtils';
+import { ViewItemDialog } from '@/components/ViewItemDialog';
+import { BulkActionsBar } from '@/components/BulkActionsBar';
 import { useToast } from '@/hooks/use-toast';
 
 const Index = () => {
@@ -37,8 +39,10 @@ const Index = () => {
     addItem,
     updateItem,
     deleteItem,
+    deleteMultipleItems,
     getStats,
     loadItems,
+    findDuplicateItem,
   } = useSupabaseCollectionStore();
 
   const [searchQuery, setSearchQuery] = useState('');
@@ -46,7 +50,10 @@ const Index = () => {
   const [selectedStatus, setSelectedStatus] = useState<CollectionItem['status'] | 'all'>('all');
   const [editingItem, setEditingItem] = useState<CollectionItem | null>(null);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [viewingItem, setViewingItem] = useState<CollectionItem | null>(null);
+  const [viewDialogOpen, setViewDialogOpen] = useState(false);
   const [importing, setImporting] = useState(false);
+  const [selectedItems, setSelectedItems] = useState<Set<string>>(new Set());
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
 
@@ -96,9 +103,36 @@ const Index = () => {
     setEditDialogOpen(true);
   };
 
-  const handleExportExcel = async () => {
+  const handleViewItem = (item: CollectionItem) => {
+    setViewingItem(item);
+    setViewDialogOpen(true);
+  };
+
+  const handleToggleSelectItem = (itemId: string) => {
+    setSelectedItems(prev => {
+      const newSelected = new Set(prev);
+      if (newSelected.has(itemId)) {
+        newSelected.delete(itemId);
+      } else {
+        newSelected.add(itemId);
+      }
+      return newSelected;
+    });
+  };
+
+  const handleClearSelection = () => {
+    setSelectedItems(new Set());
+  };
+
+  const handleDeleteSelected = async () => {
+    const idsToDelete = Array.from(selectedItems);
+    await deleteMultipleItems(idsToDelete);
+    setSelectedItems(new Set());
+  };
+
+  const handleExportXLSX = async () => {
     try {
-      await exportToSupabaseStorage(items, 'csv');
+      await exportToXLSX(items);
       toast({
         title: "Export Complete",
         description: "Your collection has been exported to Excel and stored in your account.",
@@ -112,9 +146,26 @@ const Index = () => {
     }
   };
 
+  const handleExportCSV = async () => {
+    try {
+      await exportToCSV(items);
+      toast({
+        title: "Export Complete",
+        description: "Your collection has been exported to CSV and stored in your account.",
+      });
+    } catch (error) {
+      toast({
+        title: "Export Error",
+        description: "Failed to export your collection.",
+        variant: "destructive",
+      });
+    }
+  };
+
   const handleExportJSON = async () => {
     try {
-      await exportToSupabaseStorage(items, 'json');
+      const { exportToSupabaseStorage } = await import('@/utils/supabaseExportUtils');
+      await exportToSupabaseStorage(items as any, 'json');
       toast({
         title: "Backup Complete", 
         description: "Your collection has been backed up to JSON and stored in your account.",
@@ -144,14 +195,27 @@ const Index = () => {
       let errorCount = 0;
 
       for (const itemData of importedData) {
-        if (itemData.title && itemData.category && itemData.rating && itemData.status) {
+        if (itemData.title && itemData.category && itemData.status) {
+          // Check for duplicates
+          const duplicate = findDuplicateItem({
+            title: itemData.title,
+            category: itemData.category as any,
+            author_or_director: itemData.author_or_director,
+          });
+
+          if (duplicate) {
+            // Skip duplicate
+            continue;
+          }
+
           const result = await addItem({
             title: itemData.title,
-            category: itemData.category,
+            category: itemData.category as any,
             author_or_director: itemData.author_or_director,
             year: itemData.year,
-            rating: Math.max(1, Math.min(10, itemData.rating)),
-            status: itemData.status,
+            genre: itemData.genre,
+            rating: itemData.rating ? Math.max(1, Math.min(10, itemData.rating)) : undefined,
+            status: itemData.status as any,
             summary: itemData.summary,
             personal_notes: itemData.personal_notes,
           });
@@ -292,9 +356,13 @@ const Index = () => {
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
-                <DropdownMenuItem onClick={handleExportExcel}>
+                <DropdownMenuItem onClick={handleExportXLSX}>
                   <FileSpreadsheet className="w-4 h-4 mr-2" />
-                  Export to Excel
+                  Export to Excel (.xlsx)
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={handleExportCSV}>
+                  <FileSpreadsheet className="w-4 h-4 mr-2" />
+                  Export to CSV
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={handleExportJSON}>
                   <FileJson className="w-4 h-4 mr-2" />
@@ -372,16 +440,15 @@ const Index = () => {
               <CollectionItemCard
                 key={item.id}
                 item={item}
+                selected={selectedItems.has(item.id)}
+                onToggleSelect={() => handleToggleSelectItem(item.id)}
                 onEdit={handleEditItem}
                 onDelete={(item) => {
                   if (confirm('Are you sure you want to delete this item?')) {
                     deleteItem(item.id);
                   }
                 }}
-                onView={(item) => {
-                  // TODO: Implement view dialog
-                  console.log('View:', item);
-                }}
+                onView={handleViewItem}
               />
             ))}
           </div>
@@ -416,6 +483,18 @@ const Index = () => {
           open={editDialogOpen}
           onOpenChange={setEditDialogOpen}
           onUpdateItem={updateItem}
+        />
+
+        <ViewItemDialog
+          item={viewingItem}
+          open={viewDialogOpen}
+          onOpenChange={setViewDialogOpen}
+        />
+
+        <BulkActionsBar
+          selectedCount={selectedItems.size}
+          onClearSelection={handleClearSelection}
+          onDeleteSelected={handleDeleteSelected}
         />
       </div>
     </div>

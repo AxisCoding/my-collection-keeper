@@ -2,21 +2,7 @@ import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
 import { useToast } from '@/hooks/use-toast';
-
-interface CollectionItem {
-  id: string;
-  user_id: string;
-  title: string;
-  category: string;
-  author_or_director?: string;
-  year?: number;
-  rating: number;
-  status: string;
-  summary?: string;
-  personal_notes?: string;
-  created_at: string;
-  updated_at: string;
-}
+import { CollectionItem } from '@/types/collection';
 
 export function useSupabaseCollectionStore() {
   const [items, setItems] = useState<CollectionItem[]>([]);
@@ -39,7 +25,7 @@ export function useSupabaseCollectionStore() {
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      setItems(data || []);
+      setItems((data || []) as CollectionItem[]);
     } catch (error: any) {
       console.error('Error loading items:', error);
       toast({
@@ -71,7 +57,7 @@ export function useSupabaseCollectionStore() {
 
       if (error) throw error;
 
-      setItems(prev => [data, ...prev]);
+      setItems(prev => [data as CollectionItem, ...prev]);
       toast({
         title: "Success",
         description: "Item added to your collection",
@@ -104,7 +90,7 @@ export function useSupabaseCollectionStore() {
 
       setItems(prev => 
         prev.map(item => 
-          item.id === id ? data : item
+          item.id === id ? data as CollectionItem : item
         )
       );
       toast({
@@ -157,8 +143,44 @@ export function useSupabaseCollectionStore() {
     return items.filter(item => 
       item.title.toLowerCase().includes(lowercaseQuery) ||
       item.author_or_director?.toLowerCase().includes(lowercaseQuery) ||
-      item.summary?.toLowerCase().includes(lowercaseQuery)
+      item.summary?.toLowerCase().includes(lowercaseQuery) ||
+      item.genre?.toLowerCase().includes(lowercaseQuery)
     );
+  };
+
+  const findDuplicateItem = (newItem: { title: string; category: string; author_or_director?: string }) => {
+    return items.find(item => 
+      item.title.toLowerCase() === newItem.title.toLowerCase() &&
+      item.category === newItem.category &&
+      (item.author_or_director || '').toLowerCase() === (newItem.author_or_director || '').toLowerCase()
+    );
+  };
+
+  const deleteMultipleItems = async (ids: string[]) => {
+    if (!user) return;
+
+    try {
+      const { error } = await supabase
+        .from('items')
+        .delete()
+        .in('id', ids)
+        .eq('user_id', user.id);
+
+      if (error) throw error;
+
+      setItems(prev => prev.filter(item => !ids.includes(item.id)));
+      toast({
+        title: "Success",
+        description: `${ids.length} items deleted successfully`,
+      });
+    } catch (error: any) {
+      console.error('Error deleting items:', error);
+      toast({
+        title: "Error",
+        description: "Failed to delete items",
+        variant: "destructive",
+      });
+    }
   };
 
   const getStats = () => {
@@ -173,7 +195,7 @@ export function useSupabaseCollectionStore() {
     }, {} as Record<string, number>);
 
     const averageRating = items.length > 0
-      ? items.reduce((sum, item) => sum + item.rating, 0) / items.length
+      ? items.reduce((sum, item) => sum + (item.rating || 0), 0) / items.length
       : 0;
 
     return {
@@ -200,9 +222,11 @@ export function useSupabaseCollectionStore() {
     addItem,
     updateItem,
     deleteItem,
+    deleteMultipleItems,
     getItemsByCategory,
     searchItems,
     getStats,
     loadItems,
+    findDuplicateItem,
   };
 }

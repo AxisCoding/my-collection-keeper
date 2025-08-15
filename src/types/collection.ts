@@ -8,7 +8,8 @@ export interface CollectionItem {
   author_or_director?: string;
   year?: number;
   summary?: string;
-  rating: number; // 1-10 stars with half increments
+  genre?: string;
+  rating?: number; // 1-10 stars with half increments, optional for in-progress/planned
   status: 'completed' | 'in-progress' | 'planned' | 'dropped';
   personal_notes?: string;
   created_at: string;

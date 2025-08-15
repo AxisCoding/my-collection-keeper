@@ -46,6 +46,7 @@ export function EditItemDialog({ item, open, onOpenChange, onUpdateItem }: EditI
     category: '' as CollectionCategory,
     author_or_director: '',
     year: '',
+    genre: '',
     summary: '',
     rating: 0,
     status: 'planned' as CollectionItem['status'],
@@ -59,8 +60,9 @@ export function EditItemDialog({ item, open, onOpenChange, onUpdateItem }: EditI
         category: item.category,
         author_or_director: item.author_or_director || '',
         year: item.year?.toString() || '',
+        genre: item.genre || '',
         summary: item.summary || '',
-        rating: item.rating,
+        rating: item.rating || 0,
         status: item.status,
         personal_notes: item.personal_notes || '',
       });
@@ -70,19 +72,25 @@ export function EditItemDialog({ item, open, onOpenChange, onUpdateItem }: EditI
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!item || !formData.title || !formData.category || formData.rating === 0) {
+    if (!item || !formData.title || !formData.category) {
+      return;
+    }
+
+    const isRatingRequired = formData.status === 'completed' || formData.status === 'dropped';
+    if (isRatingRequired && formData.rating === 0) {
       return;
     }
 
     const updates: Partial<CollectionItem> = {
       title: formData.title,
       category: formData.category,
-      rating: formData.rating,
       status: formData.status,
-      summary: formData.summary || undefined,
-      year: formData.year ? parseInt(formData.year) : undefined,
-      personal_notes: formData.personal_notes || undefined,
       author_or_director: formData.author_or_director || undefined,
+      year: formData.year ? parseInt(formData.year) : undefined,
+      genre: formData.genre || undefined,
+      summary: formData.summary || undefined,
+      personal_notes: formData.personal_notes || undefined,
+      rating: formData.rating > 0 ? formData.rating : undefined,
     };
 
     onUpdateItem(item.id, updates);
@@ -91,23 +99,17 @@ export function EditItemDialog({ item, open, onOpenChange, onUpdateItem }: EditI
 
   const getCreatorLabel = () => {
     switch (formData.category) {
-      case 'books':
-        return 'Author';
+      case 'books': return 'Author';
       case 'movies':
-      case 'tv':
-        return 'Director';
-      case 'manga':
-        return 'Studio/Author';
-      default:
-        return 'Creator';
+      case 'tv': return 'Director';
+      case 'manga': return 'Studio/Author';
+      default: return 'Creator';
     }
   };
 
-  if (!item) return null;
-
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Edit Item</DialogTitle>
         </DialogHeader>
@@ -128,10 +130,9 @@ export function EditItemDialog({ item, open, onOpenChange, onUpdateItem }: EditI
             <Select
               value={formData.category}
               onValueChange={(value) => setFormData({ ...formData, category: value as CollectionCategory })}
-              required
             >
               <SelectTrigger>
-                <SelectValue placeholder="Select category" />
+                <SelectValue />
               </SelectTrigger>
               <SelectContent>
                 {categoryOptions.map((option) => (
@@ -143,15 +144,14 @@ export function EditItemDialog({ item, open, onOpenChange, onUpdateItem }: EditI
             </Select>
           </div>
 
-          {formData.category && (
-            <div className="space-y-2">
-              <Label htmlFor="creator">{getCreatorLabel()}</Label>
-              <Input
-                value={formData.author_or_director}
-                onChange={(e) => setFormData({ ...formData, author_or_director: e.target.value })}
-              />
-            </div>
-          )}
+          <div className="space-y-2">
+            <Label htmlFor="creator">{getCreatorLabel()}</Label>
+            <Input
+              id="creator"
+              value={formData.author_or_director}
+              onChange={(e) => setFormData({ ...formData, author_or_director: e.target.value })}
+            />
+          </div>
 
           <div className="space-y-2">
             <Label htmlFor="year">Year</Label>
@@ -160,12 +160,21 @@ export function EditItemDialog({ item, open, onOpenChange, onUpdateItem }: EditI
               type="number"
               value={formData.year}
               onChange={(e) => setFormData({ ...formData, year: e.target.value })}
-              placeholder="e.g., 2023"
             />
           </div>
 
           <div className="space-y-2">
-            <Label>Rating *</Label>
+            <Label htmlFor="genre">Genre</Label>
+            <Input
+              id="genre"
+              value={formData.genre}
+              onChange={(e) => setFormData({ ...formData, genre: e.target.value })}
+              placeholder="e.g., Sci-Fi, Romance, Action"
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label>Rating {(formData.status === 'completed' || formData.status === 'dropped') ? '*' : ''}</Label>
             <StarRating
               rating={formData.rating}
               onRatingChange={(rating) => setFormData({ ...formData, rating })}
@@ -197,7 +206,6 @@ export function EditItemDialog({ item, open, onOpenChange, onUpdateItem }: EditI
               id="summary"
               value={formData.summary}
               onChange={(e) => setFormData({ ...formData, summary: e.target.value })}
-              placeholder="Brief description..."
               rows={3}
             />
           </div>
@@ -208,7 +216,6 @@ export function EditItemDialog({ item, open, onOpenChange, onUpdateItem }: EditI
               id="personal_notes"
               value={formData.personal_notes}
               onChange={(e) => setFormData({ ...formData, personal_notes: e.target.value })}
-              placeholder="Your thoughts, recommendations, etc..."
               rows={2}
             />
           </div>

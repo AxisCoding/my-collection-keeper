@@ -9,12 +9,14 @@ import { cn } from '@/lib/utils';
 
 interface CollectionItemCardProps {
   item: CollectionItem;
+  selected?: boolean;
+  onToggleSelect?: () => void;
   onEdit?: (item: CollectionItem) => void;
   onDelete?: (item: CollectionItem) => void;
   onView?: (item: CollectionItem) => void;
 }
 
-export function CollectionItemCard({ item, onEdit, onDelete, onView }: CollectionItemCardProps) {
+export function CollectionItemCard({ item, selected = false, onToggleSelect, onEdit, onDelete, onView }: CollectionItemCardProps) {
   const getCreatorName = () => {
     return item.author_or_director || null;
   };
@@ -39,8 +41,19 @@ export function CollectionItemCard({ item, onEdit, onDelete, onView }: Collectio
     <Card className={cn(
       'group relative overflow-hidden transition-all duration-300',
       'hover:shadow-lg hover:-translate-y-1',
-      'bg-gradient-to-br from-card to-card/95'
+      'bg-gradient-to-br from-card to-card/95',
+      selected && "ring-2 ring-primary bg-primary/5"
     )}>
+      {onToggleSelect && (
+        <div className="absolute top-2 left-2 z-10">
+          <input
+            type="checkbox"
+            checked={selected}
+            onChange={onToggleSelect}
+            className="w-4 h-4 rounded border-border bg-background"
+          />
+        </div>
+      )}
       <CardHeader className="pb-3">
         <div className="flex items-start justify-between gap-3">
           <div className="flex-1 min-w-0">
@@ -66,7 +79,7 @@ export function CollectionItemCard({ item, onEdit, onDelete, onView }: Collectio
 
       <CardContent className="space-y-4">
         <div className="flex items-center justify-between">
-          <StarRating rating={item.rating} readonly size="sm" />
+          {item.rating && <StarRating rating={item.rating} readonly size="sm" />}
           {getStatusBadge()}
         </div>
 

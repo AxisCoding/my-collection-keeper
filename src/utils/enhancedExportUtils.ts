@@ -131,6 +131,55 @@ export const exportToCSV = async (items: CollectionItem[]) => {
   }
 };
 
+export const exportToAnki = async (items: CollectionItem[]) => {
+  try {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) throw new Error('User not authenticated');
+
+    // Create CSV content without headers for Anki import
+    const csvContent = items.map(item => [
+      `"${item.title.replace(/"/g, '""')}"`,
+      `"${item.category}"`,
+      `"${item.author_or_director || ''}"`,
+      `"${item.year || ''}"`,
+      `"${item.genre || ''}"`,
+      `"${item.rating || ''}"`,
+      `"${item.status}"`,
+      `"${(item.summary || '').replace(/"/g, '""')}"`,
+      `"${(item.personal_notes || '').replace(/"/g, '""')}"`,
+      `"${new Date(item.created_at).toLocaleDateString()}"`,
+      `"${new Date(item.updated_at).toLocaleDateString()}"`
+    ].join(',')).join('\n');
+
+    const filename = `anki-export-${new Date().toISOString().split('T')[0]}.csv`;
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const file = new File([blob], filename, { type: blob.type });
+
+    // Upload to Supabase Storage
+    const filePath = `${user.id}/${filename}`;
+    const { data, error } = await supabase.storage
+      .from('User-Data-Exports')
+      .upload(filePath, file, { upsert: true });
+
+    if (error) throw error;
+
+    // Also trigger download for immediate access
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+
+    return data;
+  } catch (error) {
+    console.error('Anki export error:', error);
+    throw error;
+  }
+};
+
 export const parseImportFile = async (file: File): Promise<Partial<CollectionItem>[]> => {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();

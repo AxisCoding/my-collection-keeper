@@ -194,8 +194,10 @@ export function useSupabaseCollectionStore() {
       return acc;
     }, {} as Record<string, number>);
 
-    const averageRating = items.length > 0
-      ? items.reduce((sum, item) => sum + (item.rating || 0), 0) / items.length
+    // Only include items with ratings in average calculation
+    const ratedItems = items.filter(item => item.rating !== null && item.rating !== undefined);
+    const averageRating = ratedItems.length > 0
+      ? ratedItems.reduce((sum, item) => sum + (item.rating || 0), 0) / ratedItems.length
       : 0;
 
     return {

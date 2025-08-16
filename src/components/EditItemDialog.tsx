@@ -48,7 +48,7 @@ export function EditItemDialog({ item, open, onOpenChange, onUpdateItem }: EditI
     year: '',
     genre: '',
     summary: '',
-    rating: 0,
+    rating: null as number | null,
     status: 'planned' as CollectionItem['status'],
     personal_notes: '',
   });
@@ -62,7 +62,7 @@ export function EditItemDialog({ item, open, onOpenChange, onUpdateItem }: EditI
         year: item.year?.toString() || '',
         genre: item.genre || '',
         summary: item.summary || '',
-        rating: item.rating || 0,
+        rating: item.rating || null,
         status: item.status,
         personal_notes: item.personal_notes || '',
       });
@@ -77,7 +77,7 @@ export function EditItemDialog({ item, open, onOpenChange, onUpdateItem }: EditI
     }
 
     const isRatingRequired = formData.status === 'completed' || formData.status === 'dropped';
-    if (isRatingRequired && formData.rating === 0) {
+    if (isRatingRequired && formData.rating === null) {
       return;
     }
 
@@ -85,12 +85,12 @@ export function EditItemDialog({ item, open, onOpenChange, onUpdateItem }: EditI
       title: formData.title,
       category: formData.category,
       status: formData.status,
+      rating: formData.rating,
       author_or_director: formData.author_or_director || undefined,
       year: formData.year ? parseInt(formData.year) : undefined,
       genre: formData.genre || undefined,
       summary: formData.summary || undefined,
       personal_notes: formData.personal_notes || undefined,
-      rating: formData.rating > 0 ? formData.rating : undefined,
     };
 
     onUpdateItem(item.id, updates);
@@ -178,6 +178,7 @@ export function EditItemDialog({ item, open, onOpenChange, onUpdateItem }: EditI
             <StarRating
               rating={formData.rating}
               onRatingChange={(rating) => setFormData({ ...formData, rating })}
+              showNotRated
             />
           </div>
 

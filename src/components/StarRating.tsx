@@ -2,14 +2,16 @@ import { Star } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface StarRatingProps {
-  rating: number;
-  onRatingChange?: (rating: number) => void;
+  rating: number | null;
+  onRatingChange?: (rating: number | null) => void;
   readonly?: boolean;
   size?: 'sm' | 'md' | 'lg';
   maxRating?: number;
+  showNotRated?: boolean;
+  showNumericRating?: boolean;
 }
 
-export function StarRating({ rating, onRatingChange, readonly = false, size = 'md', maxRating = 10 }: StarRatingProps) {
+export function StarRating({ rating, onRatingChange, readonly = false, size = 'md', maxRating = 10, showNotRated = false, showNumericRating = false }: StarRatingProps) {
   const sizes = {
     sm: 'w-4 h-4',
     md: 'w-5 h-5',
@@ -19,6 +21,12 @@ export function StarRating({ rating, onRatingChange, readonly = false, size = 'm
   const handleStarClick = (starRating: number) => {
     if (!readonly && onRatingChange) {
       onRatingChange(starRating);
+    }
+  };
+
+  const handleNotRatedClick = () => {
+    if (!readonly && onRatingChange) {
+      onRatingChange(null);
     }
   };
 
@@ -33,10 +41,19 @@ export function StarRating({ rating, onRatingChange, readonly = false, size = 'm
   };
 
   const getStarFill = (starValue: number) => {
+    if (rating === null) return 'fill-muted text-muted-foreground';
     if (rating >= starValue) return 'fill-yellow-400 text-yellow-400';
     if (rating >= starValue - 0.5) return 'fill-yellow-400/50 text-yellow-400';
     return 'fill-muted text-muted-foreground';
   };
+
+  if (rating === null && readonly) {
+    return (
+      <div className="flex items-center gap-1">
+        <span className="text-sm text-muted-foreground">Not Rated</span>
+      </div>
+    );
+  }
 
   return (
     <div className="flex items-center gap-1">
@@ -64,10 +81,26 @@ export function StarRating({ rating, onRatingChange, readonly = false, size = 'm
           </button>
         ))}
       </div>
-      {!readonly && (
-        <span className="text-sm text-muted-foreground ml-2">
-          {rating}/10
+      {showNumericRating && rating !== null && (
+        <span className="text-sm text-muted-foreground ml-1">
+          ({rating}/10)
         </span>
+      )}
+      {!readonly && (
+        <div className="flex items-center gap-2 ml-2">
+          <span className="text-sm text-muted-foreground">
+            {rating !== null ? `${rating}/10` : 'Not Rated'}
+          </span>
+          {showNotRated && (
+            <button
+              type="button"
+              onClick={handleNotRatedClick}
+              className="text-xs text-muted-foreground hover:text-foreground underline"
+            >
+              Not Rated
+            </button>
+          )}
+        </div>
       )}
     </div>
   );

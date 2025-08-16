@@ -48,7 +48,7 @@ export function AddItemDialog({ onAddItem }: AddItemDialogProps) {
     year: '',
     genre: '',
     summary: '',
-    rating: 0,
+    rating: null as number | null,
     status: 'planned' as CollectionItem['status'],
     personal_notes: '',
   });
@@ -59,7 +59,7 @@ export function AddItemDialog({ onAddItem }: AddItemDialogProps) {
     // Rating is required for completed and dropped status, optional for in-progress and planned
     const isRatingRequired = formData.status === 'completed' || formData.status === 'dropped';
     
-    if (!formData.title || !formData.category || (isRatingRequired && formData.rating === 0)) {
+    if (!formData.title || !formData.category || (isRatingRequired && formData.rating === null)) {
       return;
     }
 
@@ -67,7 +67,7 @@ export function AddItemDialog({ onAddItem }: AddItemDialogProps) {
       title: formData.title,
       category: formData.category,
       status: formData.status,
-      ...(formData.rating > 0 && { rating: formData.rating }),
+      ...(formData.rating !== null && { rating: formData.rating }),
       ...(formData.author_or_director && { author_or_director: formData.author_or_director }),
       ...(formData.year && { year: parseInt(formData.year) }),
       ...(formData.genre && { genre: formData.genre }),
@@ -85,7 +85,7 @@ export function AddItemDialog({ onAddItem }: AddItemDialogProps) {
       year: '',
       genre: '',
       summary: '',
-      rating: 0,
+      rating: null,
       status: 'planned',
       personal_notes: '',
     });
@@ -141,6 +141,11 @@ export function AddItemDialog({ onAddItem }: AddItemDialogProps) {
           </div>
 
           <div className="space-y-2">
+            <Label htmlFor="creator">{getCreatorLabel()}</Label>
+            {getCreatorField()}
+          </div>
+
+          <div className="space-y-2">
             <Label htmlFor="category">Category *</Label>
             <Select
               value={formData.category}
@@ -159,13 +164,6 @@ export function AddItemDialog({ onAddItem }: AddItemDialogProps) {
               </SelectContent>
             </Select>
           </div>
-
-          {formData.category && (
-            <div className="space-y-2">
-              <Label htmlFor="creator">{getCreatorLabel()}</Label>
-              {getCreatorField()}
-            </div>
-          )}
 
           <div className="space-y-2">
             <Label htmlFor="year">Year</Label>
@@ -193,6 +191,7 @@ export function AddItemDialog({ onAddItem }: AddItemDialogProps) {
             <StarRating
               rating={formData.rating}
               onRatingChange={(rating) => setFormData({ ...formData, rating })}
+              showNotRated
             />
           </div>
 

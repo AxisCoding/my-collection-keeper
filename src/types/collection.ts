@@ -9,7 +9,7 @@ export interface CollectionItem {
   year?: number;
   summary?: string;
   genre?: string;
-  rating?: number; // 1-10 stars with half increments, optional for in-progress/planned
+  rating?: number | null; // 1-10 stars with half increments, optional for in-progress/planned
   status: 'completed' | 'in-progress' | 'planned' | 'dropped';
   personal_notes?: string;
   created_at: string;

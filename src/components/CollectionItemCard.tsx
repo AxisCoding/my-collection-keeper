@@ -60,27 +60,29 @@ export function CollectionItemCard({ item, selected = false, onToggleSelect, onE
             <h3 className="font-semibold text-lg leading-tight truncate group-hover:text-primary transition-colors">
               {item.title}
             </h3>
-            {getCreatorName() && (
-              <p className="text-sm text-muted-foreground mt-1">
-                by {getCreatorName()}
-              </p>
-            )}
-            {item.year && (
-              <p className="text-xs text-muted-foreground">
-                {item.year}
-              </p>
-            )}
-          </div>
-          <div className="flex items-center gap-2">
-            <CategoryBadge category={item.category} />
+            <div className="flex items-center gap-2 mt-1">
+              <CategoryBadge category={item.category} />
+              {getCreatorName() && (
+                <span className="text-sm text-muted-foreground">
+                  by {getCreatorName()}
+                </span>
+              )}
+              {item.year && (
+                <span className="text-xs text-muted-foreground">
+                  • {item.year}
+                </span>
+              )}
+            </div>
+            <div className="mt-2">
+              {getStatusBadge()}
+            </div>
           </div>
         </div>
       </CardHeader>
 
       <CardContent className="space-y-4">
         <div className="flex items-center justify-between">
-          {item.rating && <StarRating rating={item.rating} readonly size="sm" />}
-          {getStatusBadge()}
+          <StarRating rating={item.rating || null} readonly size="sm" showNumericRating />
         </div>
 
         {item.summary && (

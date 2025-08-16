@@ -25,7 +25,7 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { Search, Filter, BookOpen, Library, Download, FileSpreadsheet, FileJson, Upload, LogOut } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { exportToXLSX, exportToCSV, parseImportFile } from '@/utils/enhancedExportUtils';
+import { exportToXLSX, exportToCSV, exportToAnki, parseImportFile } from '@/utils/enhancedExportUtils';
 import { ViewItemDialog } from '@/components/ViewItemDialog';
 import { BulkActionsBar } from '@/components/BulkActionsBar';
 import { useToast } from '@/hooks/use-toast';

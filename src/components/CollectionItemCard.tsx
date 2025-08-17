@@ -71,9 +71,11 @@ export function CollectionItemCard({ item, selected = false, onToggleSelect, onE
                   • {item.year}
                 </span>
               )}
-              <CategoryBadge category={item.category} />
-              {getStatusBadge()}
             </div>
+          </div>
+          <div className="flex flex-col items-end gap-1 flex-shrink-0">
+            <CategoryBadge category={item.category} />
+            {getStatusBadge()}
           </div>
         </div>
       </CardHeader>

@@ -60,7 +60,7 @@ export function CollectionItemCard({ item, selected = false, onToggleSelect, onE
             <h3 className="font-semibold text-lg leading-tight truncate group-hover:text-primary transition-colors">
               {item.title}
             </h3>
-            <div className="flex items-center gap-2 mt-1">
+            <div className="flex flex-col mt-1">
               {getCreatorName() && (
                 <span className="text-sm text-muted-foreground">
                   by {getCreatorName()}
@@ -68,7 +68,7 @@ export function CollectionItemCard({ item, selected = false, onToggleSelect, onE
               )}
               {item.year && (
                 <span className="text-xs text-muted-foreground">
-                  • {item.year}
+                  {item.year}
                 </span>
               )}
             </div>

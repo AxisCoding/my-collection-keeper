@@ -364,9 +364,23 @@ const Index = () => {
                   <FileSpreadsheet className="w-4 h-4 mr-2" />
                   Export to CSV
                 </DropdownMenuItem>
-                <DropdownMenuItem onClick={handleExportJSON}>
-                  <FileJson className="w-4 h-4 mr-2" />
-                  Backup as JSON
+                <DropdownMenuItem onClick={async () => {
+                  try {
+                    await exportToAnki(items);
+                    toast({
+                      title: "Export Complete",
+                      description: "Your collection has been exported to Anki CSV format.",
+                    });
+                  } catch (error) {
+                    toast({
+                      title: "Export Error",
+                      description: "Failed to export your collection.",
+                      variant: "destructive",
+                    });
+                  }
+                }}>
+                  <FileSpreadsheet className="w-4 h-4 mr-2" />
+                  Export for Anki
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>

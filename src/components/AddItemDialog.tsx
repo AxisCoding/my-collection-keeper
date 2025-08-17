@@ -131,21 +131,6 @@ export function AddItemDialog({ onAddItem }: AddItemDialogProps) {
         
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="title">Title *</Label>
-            <Input
-              id="title"
-              value={formData.title}
-              onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-              required
-            />
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="creator">{getCreatorLabel()}</Label>
-            {getCreatorField()}
-          </div>
-
-          <div className="space-y-2">
             <Label htmlFor="category">Category *</Label>
             <Select
               value={formData.category}
@@ -163,6 +148,21 @@ export function AddItemDialog({ onAddItem }: AddItemDialogProps) {
                 ))}
               </SelectContent>
             </Select>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="title">Title *</Label>
+            <Input
+              id="title"
+              value={formData.title}
+              onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+              required
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="creator">{getCreatorLabel()}</Label>
+            {getCreatorField()}
           </div>
 
           <div className="space-y-2">

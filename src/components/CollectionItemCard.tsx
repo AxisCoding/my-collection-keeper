@@ -61,7 +61,6 @@ export function CollectionItemCard({ item, selected = false, onToggleSelect, onE
               {item.title}
             </h3>
             <div className="flex items-center gap-2 mt-1">
-              <CategoryBadge category={item.category} />
               {getCreatorName() && (
                 <span className="text-sm text-muted-foreground">
                   by {getCreatorName()}
@@ -72,8 +71,7 @@ export function CollectionItemCard({ item, selected = false, onToggleSelect, onE
                   • {item.year}
                 </span>
               )}
-            </div>
-            <div className="mt-2">
+              <CategoryBadge category={item.category} />
               {getStatusBadge()}
             </div>
           </div>

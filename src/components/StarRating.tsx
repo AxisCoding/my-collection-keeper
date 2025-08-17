@@ -88,14 +88,21 @@ export function StarRating({ rating, onRatingChange, readonly = false, size = 'm
       )}
       {!readonly && (
         <div className="flex items-center gap-2 ml-2">
-          <span className="text-sm text-muted-foreground">
-            {rating !== null ? `${rating}/10` : 'Not Rated'}
-          </span>
+          {rating !== null && (
+            <span className="text-sm text-muted-foreground">
+              {rating}/10
+            </span>
+          )}
           {showNotRated && (
             <button
               type="button"
               onClick={handleNotRatedClick}
-              className="text-xs text-muted-foreground hover:text-foreground underline"
+              className={cn(
+                "text-xs underline transition-colors",
+                rating === null 
+                  ? "text-foreground font-medium" 
+                  : "text-muted-foreground hover:text-foreground"
+              )}
             >
               Not Rated
             </button>
